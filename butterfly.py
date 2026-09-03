@@ -3,7 +3,8 @@ import pandas as pd
 #import scikit-learn as sklearn
 import matplotlib.pyplot as plt
 
-#wrong atm change later "Antal" is strings
+#function to compute the total number of observations
+#can be used to normalize the distribution to an empirical density
 def totalObservationCounter(array):
     observations = 0
     for i in array:
@@ -14,6 +15,7 @@ def totalObservationCounter(array):
     return observations 
 
 #replace all "noterad" by a one 
+#and convert all string numbers inot integers
 def observationToInt(array):
     intObservations = np.ones(len(array))
     for i in range(len(array)):
@@ -24,7 +26,8 @@ def observationToInt(array):
     return intObservations
             
 
-
+#strips all unnecessary information away and only keeps the month 
+#expects format of "yyyy-mm-dd" (but would also work with "dd-mm-yyyy")
 def extractMonth(array):
     monthArray = []
     for i in array:
@@ -32,28 +35,25 @@ def extractMonth(array):
         monthArray.append(month)
     return np.array(monthArray) 
 
+#function to compute the observations per month 
+def computeObservationsPerMonth(monthArray, observationArray):
+    observationsPerMonth = np.zeros(12)
+    for i in range(len(monthArray)):
+        observationsPerMonth[int(monthArray[i]) - 1] += observationArray[i]
+    return observationsPerMonth
 
-df = pd.read_csv("./butterfly.csv")
-print(df)
-#print()
-#plot observations over time 
-x = extractMonth(df["Startdatum"])
-observationsPerMonth = np.zeros(12)
+def computeEmpiricalDensity(inputPath):
+    df = pd.read_csv(inputPath)
+    x = extractMonth(df["Startdatum"])
+    y = observationToInt(df["Antal"])
+    totalObservation = totalObservationCounter(df["Antal"])
+    observationsPerMonth = computeObservationsPerMonth(x, y)
+    empiricalDensity = observationsPerMonth/totalObservation
+    return empiricalDensity
 
-#for i in x:
- #   observationsPerMonth[int(i) - 1] += 1
-print(x)
 
-#observations per month with actual values
-#for i in range(len(x)):
-#    observationsPerMonth[int(x[i]) - 1] += 
-y = observationToInt(df["Antal"])
-totalObservations = totalObservationCounter(df["Antal"])
-empiricalDensity = y/totalObservations
 
-print(empiricalDensity)
-#print(df["Antal"])
-print(y)
+
 
 #note that the extra information in the number of observed butterflys doesnt seem to change the distribution
 #model idea: assume underlying probability density and approxamite it by empirical density function (observationsPerMonth/totalObservations)
@@ -62,10 +62,11 @@ print(y)
 
 #another idea: scatter plot with geographical positions (bigger dots reprensent more sightings) and colour them according to specific (climate?) zones
 
-for i in range(len(x)):
-    observationsPerMonth[int(x[i]) - 1] += y[i]
+empiricalDensityRovfjäril = computeEmpiricalDensity("./butterfly.csv")
+empricalDensityRapsfjäril = computeEmpiricalDensity("./raps.csv")
 
-plt.plot(observationsPerMonth)
+plt.plot(empiricalDensityRovfjäril)
+plt.plot(empricalDensityRapsfjäril)
 
 #scatter plot showing the sightings on the 'map'
 #plt.scatter(df["Ost"], df["Nord"])
